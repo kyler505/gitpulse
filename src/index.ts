@@ -4,6 +4,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Octokit } from "@octokit/rest";
 import { z } from "zod";
+import { createServer, IncomingMessage, ServerResponse } from "http";
+import { URL } from "url";
 
 // GitHub API types and interfaces
 interface GitHubRepository {
@@ -636,10 +638,7 @@ async function main() {
 
   if (useHttp) {
     // Simple HTTP API server for web integrations
-    const { createServer } = await import("http");
-    const { URL } = await import("url");
-
-    const httpServer = createServer(async (req, res) => {
+    const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse) => {
       // Enable CORS
       res.setHeader("Access-Control-Allow-Origin", "*");
       res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -948,8 +947,10 @@ async function main() {
       console.error(`GitPulse HTTP Server running on port ${port}`);
       console.error(`Health check: /health`);
       console.error(`MCP endpoint: /mcp`);
-      console.error(`API endpoints: /api/{commits,prs,issues,releases,repo-info}`);
-      console.error(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.error(
+        `API endpoints: /api/{commits,prs,issues,releases,repo-info}`
+      );
+      console.error(`Environment: ${process.env.NODE_ENV || "development"}`);
     });
   } else {
     // Stdio transport for command-line clients

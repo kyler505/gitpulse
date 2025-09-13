@@ -2,6 +2,10 @@
 
 A Model Context Protocol (MCP) server that monitors GitHub repositories and delivers summarized updates via Poke Automations. This server provides tools to fetch commits, pull requests, issues, and releases from GitHub repositories, as well as resources for activity summaries and prompts for planning monitoring strategies.
 
+## Quick Deploy
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/YOUR_USERNAME/GitPulse)
+
 ## Features
 
 ### Tools
