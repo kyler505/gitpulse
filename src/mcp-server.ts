@@ -364,7 +364,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
         const mcpRequest = JSON.parse(body || "{}");
         console.log("MCP Request at root:", JSON.stringify(mcpRequest, null, 2));
 
-        // Handle the same MCP requests as /mcp endpoint
+        // Handle initialize request
         if (mcpRequest.method === "initialize") {
           const response = {
             jsonrpc: "2.0",
@@ -389,9 +389,134 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
           return;
         }
 
-        // Redirect to main MCP handler by setting the URL
-        req.url = "/mcp";
-        // Fall through to the main MCP handler below
+        // Handle tools/list request
+        if (mcpRequest.method === "tools/list") {
+          const response = {
+            jsonrpc: "2.0",
+            id: mcpRequest.id,
+            result: {
+              tools: [
+                {
+                  name: "fetchNewCommits",
+                  description: "Fetch new commits from a GitHub repository",
+                  inputSchema: {
+                    type: "object",
+                    properties: {
+                      repository: {
+                        type: "string",
+                        description: "Repository in format owner/repo"
+                      },
+                      since: {
+                        type: "string",
+                        description: "ISO 8601 timestamp to fetch commits since"
+                      },
+                      per_page: {
+                        type: "number",
+                        description: "Number of commits to fetch (max 100)",
+                        default: 30
+                      }
+                    },
+                    required: ["repository"]
+                  }
+                },
+                {
+                  name: "fetchNewPRs",
+                  description: "Fetch new pull requests from a GitHub repository",
+                  inputSchema: {
+                    type: "object",
+                    properties: {
+                      repository: {
+                        type: "string",
+                        description: "Repository in format owner/repo"
+                      },
+                      state: {
+                        type: "string",
+                        enum: ["open", "closed", "all"],
+                        description: "Filter PRs by state",
+                        default: "open"
+                      },
+                      per_page: {
+                        type: "number",
+                        description: "Number of PRs to fetch (max 100)",
+                        default: 30
+                      }
+                    },
+                    required: ["repository"]
+                  }
+                }
+              ]
+            }
+          };
+
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(response));
+          return;
+        }
+
+        // Handle tools/call request
+        if (mcpRequest.method === "tools/call") {
+          const toolName = mcpRequest.params?.name;
+          const toolArgs = mcpRequest.params?.arguments || {};
+
+          let result;
+          switch (toolName) {
+            case "fetchNewCommits":
+              result = await handleCommitsRequest(toolArgs);
+              break;
+            case "fetchNewPRs":
+              result = await handlePRsRequest(toolArgs);
+              break;
+            default:
+              res.writeHead(400, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({
+                jsonrpc: "2.0",
+                id: mcpRequest.id,
+                error: {
+                  code: -32601,
+                  message: "Method not found",
+                  data: { method: toolName }
+                }
+              }));
+              return;
+          }
+
+          const response = {
+            jsonrpc: "2.0",
+            id: mcpRequest.id,
+            result: {
+              content: [
+                {
+                  type: "text",
+                  text: JSON.stringify(result, null, 2)
+                }
+              ]
+            }
+          };
+
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(response));
+          return;
+        }
+
+        // Handle notification/initialized
+        if (mcpRequest.method === "notifications/initialized") {
+          res.writeHead(204);
+          res.end();
+          return;
+        }
+
+        // Unknown method
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({
+          jsonrpc: "2.0",
+          id: mcpRequest.id || null,
+          error: {
+            code: -32601,
+            message: "Method not found",
+            data: { method: mcpRequest.method }
+          }
+        }));
+
       } catch (error) {
         console.error("MCP Error at root:", error);
         res.writeHead(500, { "Content-Type": "application/json" });
@@ -404,7 +529,6 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
             data: { error: error instanceof Error ? error.message : String(error) }
           }
         }));
-        return;
       }
     });
     return;
