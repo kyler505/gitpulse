@@ -78,16 +78,24 @@ const port = parseInt(process.env.PORT || "3000");
 
 const server = createServer(
   async (req: IncomingMessage, res: ServerResponse) => {
-    // Enable CORS
+    // Enable CORS with comprehensive headers
     res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, HEAD");
     res.setHeader(
-      "Access-Control-Allow-Headers",
-      "Content-Type, Authorization"
+      "Access-Control-Allow-Headers", 
+      "Content-Type, Authorization, Accept, Origin, X-Requested-With"
     );
+    res.setHeader("Access-Control-Max-Age", "86400");
+    res.setHeader("Vary", "Origin, Access-Control-Request-Method, Access-Control-Request-Headers");
 
     if (req.method === "OPTIONS") {
       res.writeHead(200);
+      res.end();
+      return;
+    }
+
+    if (req.method === "HEAD") {
+      res.writeHead(200, { "Content-Type": "application/json" });
       res.end();
       return;
     }
@@ -163,7 +171,21 @@ const server = createServer(
       req.on("data", (chunk) => (body += chunk));
       req.on("end", async () => {
         try {
-          const mcpRequest = JSON.parse(body || "{}");
+          if (!body || body.trim() === "") {
+            console.log("Empty request body received");
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({
+              jsonrpc: "2.0",
+              id: null,
+              error: {
+                code: -32600,
+                message: "Invalid Request - empty body"
+              }
+            }));
+            return;
+          }
+          
+          const mcpRequest = JSON.parse(body);
           console.log("MCP Request:", JSON.stringify(mcpRequest, null, 2));
 
           // Handle initialize request
