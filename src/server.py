@@ -19,7 +19,7 @@ def get_github_client() -> Github:
         # Use public API without authentication (rate limited)
         return Github()
 
-def parse_repository(repo_str: str) -> tuple[str, str]:
+def parse_repository(repo_str: str):
     """Parse repository string in format 'owner/repo'"""
     parts = repo_str.split("/")
     if len(parts) != 2:
