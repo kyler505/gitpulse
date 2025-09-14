@@ -8,9 +8,10 @@
     "gitpulse-mcp": "build/mcp-server.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && ls -la build/",
     "dev": "tsc --watch",
     "start": "node build/mcp-server.js",
+    "debug": "ls -la build/ && node build/mcp-server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "postinstall": "npm run build"
   },
