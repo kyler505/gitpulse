@@ -2,8 +2,10 @@ services:
   - type: web
     name: gitpulse-mcp-server
     env: node
+    region: oregon
+    plan: free
     buildCommand: npm ci && npm run build
-    startCommand: npm run debug
+    startCommand: node build/mcp-server.js
     envVars:
       - key: NODE_ENV
         value: production
