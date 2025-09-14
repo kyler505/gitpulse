@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 import os
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import List, Dict, Any, Optional
 from fastmcp import FastMCP
-from github import Github, Repository
-import json
+from github import Github
 
-# Initialize FastMCP server
 mcp = FastMCP("GitPulse MCP Server")
 
 # Initialize GitHub client
@@ -26,12 +24,23 @@ def parse_repository(repo_str: str):
         raise ValueError("Repository must be in format 'owner/repo'")
     return parts[0], parts[1]
 
-@mcp.tool(description="Fetch new commits from a GitHub repository")
-def fetchNewCommits(
-    repository: str,
-    per_page: int = 30,
-    since: Optional[str] = None
-) -> List[Dict[str, Any]]:
+@mcp.tool(description="Greet a user by name with a welcome message from the GitPulse MCP server")
+def greet(name: str) -> str:
+    return f"Hello, {name}! Welcome to GitPulse - your GitHub monitoring MCP server!"
+
+@mcp.tool(description="Get information about the GitPulse MCP server including name, version, environment, and Python version")
+def get_server_info() -> dict:
+    return {
+        "server_name": "GitPulse MCP Server",
+        "version": "1.0.0",
+        "description": "GitHub repository monitoring MCP server",
+        "environment": os.environ.get("ENVIRONMENT", "development"),
+        "python_version": os.sys.version.split()[0],
+        "github_token_configured": bool(os.environ.get("GITHUB_TOKEN"))
+    }
+
+@mcp.tool(description="Fetch recent commits from a GitHub repository")
+def fetchNewCommits(repository: str, per_page: int = 30, since: str = None) -> List[Dict[str, Any]]:
     """
     Fetch recent commits from a GitHub repository.
     
@@ -84,11 +93,7 @@ def fetchNewCommits(
         raise Exception(f"Error fetching commits: {str(e)}")
 
 @mcp.tool(description="Fetch pull requests from a GitHub repository")
-def fetchNewPRs(
-    repository: str,
-    state: str = "open",
-    per_page: int = 30
-) -> List[Dict[str, Any]]:
+def fetchNewPRs(repository: str, state: str = "open", per_page: int = 30) -> List[Dict[str, Any]]:
     """
     Fetch pull requests from a GitHub repository.
     
@@ -139,25 +144,12 @@ def fetchNewPRs(
     except Exception as e:
         raise Exception(f"Error fetching pull requests: {str(e)}")
 
-@mcp.tool(description="Get information about the GitPulse MCP server")
-def get_server_info() -> Dict[str, Any]:
-    """Get information about the GitPulse MCP server including name, version, and GitHub token status"""
-    return {
-        "server_name": "GitPulse MCP Server",
-        "version": "1.0.0",
-        "description": "GitHub repository monitoring MCP server",
-        "environment": os.environ.get("ENVIRONMENT", "production"),
-        "github_token_configured": bool(os.environ.get("GITHUB_TOKEN")),
-        "available_tools": ["fetchNewCommits", "fetchNewPRs", "get_server_info"]
-    }
-
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     host = "0.0.0.0"
     
     print(f"Starting GitPulse FastMCP server on {host}:{port}")
     print(f"GitHub token configured: {bool(os.environ.get('GITHUB_TOKEN'))}")
-    print("FastMCP server ready for Poke integration!")
     
     mcp.run(
         transport="http",

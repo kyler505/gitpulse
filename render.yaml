@@ -1,13 +1,25 @@
-services:
-  - type: web
-    name: gitpulse-mcp-server
-    env: python
-    region: oregon
-    plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: python src/server.py
-    envVars:
-      - key: ENVIRONMENT
-        value: production
-      - key: GITHUB_TOKEN
-        sync: false  # This will be set in Render dashboard
+services:services:
+
+  - type: web  - type: web
+
+    name: gitpulse-mcp-server    name: gitpulse-mcp-server
+
+    runtime: python    env: python
+
+    buildCommand: pip install -r requirements.txt    region: oregon
+
+    startCommand: python src/server.py    plan: free
+
+    plan: free    buildCommand: pip install -r requirements.txt
+
+    autoDeploy: false    startCommand: python src/server.py
+
+    envVars:    envVars:
+
+      - key: ENVIRONMENT      - key: ENVIRONMENT
+
+        value: production        value: production
+
+      - key: GITHUB_TOKEN      - key: GITHUB_TOKEN
+
+        sync: false        sync: false  # This will be set in Render dashboard
