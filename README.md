@@ -1,161 +1,133 @@
 # GitPulse MCP Server
 
-A Model Context Protocol (MCP) server that monitors GitHub repositories and delivers summarized updates via Poke Automations. This server provides tools to fetch commits, pull requests, issues, and releases from GitHub repositories, as well as resources for activity summaries and prompts for planning monitoring strategies.
+A Model Context Protocol (MCP) server that monitors GitHub repositories and delivers summarized updates via Poke Automations. Built with FastMCP for maximum compatibility.
 
-## Quick Deploy
-
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/YOUR_USERNAME/GitPulse)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/kyler505/gitpulse)
 
 ## Features
 
-### Tools
-- **fetchNewCommits**: Get recent commits from a repository since a given timestamp
-- **fetchNewPRs**: Fetch pull requests with state filtering (open, closed, all)
-- **fetchNewIssues**: Fetch issues with state filtering (open, closed, all)
-- **fetchNewReleases**: Get recent releases from a repository
-- **getRepositoryInfo**: Get general information about a repository
+- **GitHub API Integration**: Monitor commits, pull requests, issues, and releases
+- **FastMCP Framework**: Built using the verified FastMCP library for Poke compatibility
+- **MCP Protocol**: Compatible with Poke Automations and other MCP clients
+- **Secure Authentication**: Uses GitHub Personal Access Tokens
+- **Cloud Deployment**: Ready for Render.com deployment
 
-### Resources
-- **repo-activity-summary**: Comprehensive markdown summary of recent repository activity accessible via `github://activity/{owner}/{repo}` URIs
+## Available Tools
 
-### Prompts
-- **planRepositoryMonitoring**: Interactive prompt to help plan a repository monitoring strategy
+### fetchNewCommits
+Fetch recent commits from a GitHub repository.
+- **repository**: Repository in format 'owner/repo' (e.g., 'microsoft/vscode')
+- **per_page**: Number of commits to fetch (max 100, default 30)
+- **since**: ISO 8601 timestamp to fetch commits since (optional)
 
-## Installation
+### fetchNewPRs
+Fetch pull requests from a GitHub repository.
+- **repository**: Repository in format 'owner/repo' (e.g., 'microsoft/vscode')
+- **state**: Filter PRs by state ('open', 'closed', 'all', default 'open')
+- **per_page**: Number of PRs to fetch (max 100, default 30)
 
-1. Clone this repository:
+### get_server_info
+Get information about the GitPulse MCP server including version and configuration status.
+
+## Quick Start
+
+### 1. Environment Setup
 ```bash
-git clone <repository-url>
-cd GitPulse
+# Clone the repository
+git clone https://github.com/kyler505/gitpulse.git
+cd gitpulse
+
+# Create virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Set up environment variables
+export GITHUB_TOKEN="your_github_personal_access_token"
 ```
 
-2. Install dependencies:
+### 2. Local Development
 ```bash
-npm install
+# Start the server
+python src/server.py
 ```
 
-3. Build the project:
+The server will be available at `http://localhost:8000/mcp`
+
+### 3. Testing with MCP Inspector
 ```bash
-npm run build
+# In another terminal
+npx @modelcontextprotocol/inspector
 ```
+Open http://localhost:3000 and connect to `http://localhost:8000/mcp` using "Streamable HTTP" transport.
+
+## Deployment
+
+### Render.com (Recommended)
+1. Click the "Deploy to Render" button above, or
+2. Fork this repository
+3. Connect your GitHub account to Render
+4. Create a new Web Service on Render
+5. Connect your forked repository
+6. Render will automatically detect the `render.yaml` configuration
+7. Set your `GITHUB_TOKEN` environment variable in the Render dashboard
+
+Your server will be available at `https://your-service-name.onrender.com/mcp`
+
+## Integration with Poke
+
+1. Go to [https://poke.com/settings/connections/integrations/new](https://poke.com/settings/connections/integrations/new)
+2. Add your deployed MCP server URL: `https://your-service-name.onrender.com/mcp`
+3. Your GitPulse tools will be available in Poke Automations!
+
+## Example Usage
+
+Once integrated with Poke, you can use natural language commands like:
+- "Get recent commits from microsoft/vscode"
+- "Show me open pull requests for octocat/Hello-World"
+- "What's the latest activity in the react repository?"
 
 ## Configuration
 
 ### GitHub Token
-You need a GitHub personal access token to use this server. Set it as an environment variable:
+You need a GitHub personal access token to use this server:
 
-```bash
-export GITHUB_TOKEN="your_github_token_here"
-```
+1. Go to GitHub Settings > Developer settings > Personal access tokens
+2. Generate a new token with `repo` scope (for private repos) or public repo access
+3. Set it as the `GITHUB_TOKEN` environment variable
 
-Or configure it in your MCP client configuration.
-
-### MCP Client Configuration
-
-For Claude Desktop, add this to your `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "gitpulse": {
-      "command": "node",
-      "args": ["/absolute/path/to/GitPulse/build/index.js"],
-      "env": {
-        "GITHUB_TOKEN": "your_github_token_here"
-      }
-    }
-  }
-}
-```
-
-## Usage
-
-### Command Line
-```bash
-# Run the server directly
-npm start
-
-# Run in development mode with file watching
-npm run dev
-```
-
-### With MCP Clients
-
-Once configured with an MCP client like Claude Desktop, you can:
-
-1. **Monitor repository activity**: Ask for recent commits, PRs, or issues from any public repository
-2. **Get repository summaries**: Request activity summaries using the resource URIs
-3. **Plan monitoring strategies**: Use the planning prompt to set up monitoring for multiple repositories
-
-### Example Queries
-
-- "Show me the latest commits from microsoft/vscode"
-- "Get the open pull requests for facebook/react"
-- "What are the recent releases in nodejs/node?"
-- "Give me an activity summary for the GitPulse repository"
-
-## Technical Details
-
-### Architecture
-- **Protocol**: Model Context Protocol (MCP) over stdio
-- **GitHub API**: Octokit REST API v4
-- **Authentication**: GitHub Personal Access Token
-- **Data Format**: JSON responses with markdown formatting for summaries
-
-### Rate Limiting
-The server respects GitHub's API rate limits:
-- 5,000 requests per hour for authenticated requests
-- Automatic retry handling for rate limit errors
-- Configurable pagination limits (max 100 items per request)
-
-### Security
-- Tokens are passed via environment variables
-- No token storage or logging
-- Read-only GitHub API access
-- Input validation using Zod schemas
+### Environment Variables
+- `GITHUB_TOKEN`: Your GitHub personal access token (required for authenticated requests)
+- `PORT`: Server port (default: 8000)
+- `ENVIRONMENT`: Environment name (default: production)
 
 ## Development
 
-### Scripts
-- `npm run build`: Compile TypeScript to JavaScript
-- `npm run dev`: Watch mode for development
-- `npm start`: Run the compiled server
-- `npm test`: Run tests (placeholder)
+### Requirements
+- Python 3.8+
+- FastMCP 0.2.0+
+- PyGithub 2.1.1+
 
 ### Project Structure
 ```
-src/
-  └── index.ts          # Main MCP server implementation
-build/                  # Compiled JavaScript output
-.vscode/
-  └── mcp.json          # MCP server configuration for VS Code
+GitPulse/
+├── src/
+│   └── server.py          # Main FastMCP server
+├── requirements.txt       # Python dependencies
+├── render.yaml           # Render deployment config
+└── README.md
 ```
-
-### Adding New Features
-
-To add new GitHub API integrations:
-
-1. Define TypeScript interfaces for the data structures
-2. Add new tools using `server.tool()` with Zod schemas
-3. Implement the GitHub API calls using the Octokit client
-4. Add error handling and response formatting
-5. Update this README with the new functionality
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Submit a pull request
 
 ## License
 
-MIT License - see LICENSE file for details.
+MIT License - see the LICENSE file for details.
 
 ## Support
 
-For issues and questions:
-- Create an issue in this repository
-- Check the MCP documentation at https://modelcontextprotocol.io
-- Refer to GitHub API documentation at https://docs.github.com/en/rest
+For issues or questions:
+- Create an issue on GitHub
+- Contact: [your-email@example.com]
+
+Built with ❤️ using [FastMCP](https://github.com/jlowin/fastmcp)

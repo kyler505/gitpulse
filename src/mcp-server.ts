@@ -82,11 +82,14 @@ const server = createServer(
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, HEAD");
     res.setHeader(
-      "Access-Control-Allow-Headers", 
+      "Access-Control-Allow-Headers",
       "Content-Type, Authorization, Accept, Origin, X-Requested-With"
     );
     res.setHeader("Access-Control-Max-Age", "86400");
-    res.setHeader("Vary", "Origin, Access-Control-Request-Method, Access-Control-Request-Headers");
+    res.setHeader(
+      "Vary",
+      "Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
+    );
 
     if (req.method === "OPTIONS") {
       res.writeHead(200);
@@ -174,17 +177,19 @@ const server = createServer(
           if (!body || body.trim() === "") {
             console.log("Empty request body received");
             res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({
-              jsonrpc: "2.0",
-              id: null,
-              error: {
-                code: -32600,
-                message: "Invalid Request - empty body"
-              }
-            }));
+            res.end(
+              JSON.stringify({
+                jsonrpc: "2.0",
+                id: null,
+                error: {
+                  code: -32600,
+                  message: "Invalid Request - empty body",
+                },
+              })
+            );
             return;
           }
-          
+
           const mcpRequest = JSON.parse(body);
           console.log("MCP Request:", JSON.stringify(mcpRequest, null, 2));
 
@@ -197,16 +202,16 @@ const server = createServer(
                 protocolVersion: "2024-11-05",
                 capabilities: {
                   tools: {
-                    listChanged: true
+                    listChanged: true,
                   },
                   logging: {},
                   prompts: {
-                    listChanged: true
+                    listChanged: true,
                   },
                   resources: {
                     subscribe: true,
-                    listChanged: true
-                  }
+                    listChanged: true,
+                  },
                 },
                 serverInfo: {
                   name: "gitpulse-mcp-server",
@@ -345,7 +350,7 @@ const server = createServer(
             const response = {
               jsonrpc: "2.0",
               id: mcpRequest.id,
-              result: {}
+              result: {},
             };
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify(response));
@@ -358,8 +363,8 @@ const server = createServer(
               jsonrpc: "2.0",
               id: mcpRequest.id,
               result: {
-                resources: []
-              }
+                resources: [],
+              },
             };
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify(response));
@@ -372,8 +377,8 @@ const server = createServer(
               jsonrpc: "2.0",
               id: mcpRequest.id,
               result: {
-                prompts: []
-              }
+                prompts: [],
+              },
             };
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify(response));
@@ -465,16 +470,16 @@ const server = createServer(
                 protocolVersion: "2024-11-05",
                 capabilities: {
                   tools: {
-                    listChanged: true
+                    listChanged: true,
                   },
                   logging: {},
                   prompts: {
-                    listChanged: true
+                    listChanged: true,
                   },
                   resources: {
                     subscribe: true,
-                    listChanged: true
-                  }
+                    listChanged: true,
+                  },
                 },
                 serverInfo: {
                   name: "gitpulse-mcp-server",
@@ -613,7 +618,7 @@ const server = createServer(
             const response = {
               jsonrpc: "2.0",
               id: mcpRequest.id,
-              result: {}
+              result: {},
             };
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify(response));
@@ -626,8 +631,8 @@ const server = createServer(
               jsonrpc: "2.0",
               id: mcpRequest.id,
               result: {
-                resources: []
-              }
+                resources: [],
+              },
             };
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify(response));
@@ -640,8 +645,8 @@ const server = createServer(
               jsonrpc: "2.0",
               id: mcpRequest.id,
               result: {
-                prompts: []
-              }
+                prompts: [],
+              },
             };
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify(response));
