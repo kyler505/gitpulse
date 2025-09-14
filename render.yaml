@@ -11,10 +11,3 @@ services:
         value: production
       - key: GITHUB_TOKEN
         sync: false  # This will be set in Render dashboard
-    scaling:
-      minInstances: 1
-      maxInstances: 3
-    disk:
-      name: gitpulse-disk
-      size: "1GB"
-    runtime: python
