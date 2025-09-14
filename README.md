@@ -1,6 +1,6 @@
 # GitPulse MCP Server
 
-A GitHub repository monitoring MCP server built with [FastMCP](https://github.com/jlowin/fastmcp) for Render deployment with streamable HTTP transport.
+**GitPulse** - AI-powered GitHub repository monitoring through MCP. Fetch commits, PRs, and repo activity via simple tool calls. Built with FastMCP for seamless AI assistant integration.
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/kyler505/gitpulse)
 
