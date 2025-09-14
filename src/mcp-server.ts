@@ -9,12 +9,6 @@ let octokit: Octokit | null = null;
 function getGitHubClient(): Octokit {
   if (!octokit) {
     const token = process.env.GITHUB_TOKEN;
-    console.log(`GitHub token status: ${token ? 'Present' : 'Missing'}`);
-    if (!token) {
-      throw new Error(
-        "GitHub token is required. Set GITHUB_TOKEN environment variable."
-      );
-    }
     octokit = new Octokit({
       auth: token,
       userAgent: "GitPulse-MCP-Server/1.0.0",
@@ -316,7 +310,48 @@ const server = createServer(
             return;
           }
 
+          // Handle ping requests (some clients send these)
+          if (mcpRequest.method === "ping") {
+            const response = {
+              jsonrpc: "2.0",
+              id: mcpRequest.id,
+              result: {}
+            };
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(response));
+            return;
+          }
+
+          // Handle resources/list (even if empty)
+          if (mcpRequest.method === "resources/list") {
+            const response = {
+              jsonrpc: "2.0",
+              id: mcpRequest.id,
+              result: {
+                resources: []
+              }
+            };
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(response));
+            return;
+          }
+
+          // Handle prompts/list (even if empty)
+          if (mcpRequest.method === "prompts/list") {
+            const response = {
+              jsonrpc: "2.0",
+              id: mcpRequest.id,
+              result: {
+                prompts: []
+              }
+            };
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(response));
+            return;
+          }
+
           // Unknown method
+          console.log(`Unknown MCP method: ${mcpRequest.method}`);
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(
             JSON.stringify({
@@ -536,7 +571,48 @@ const server = createServer(
             return;
           }
 
+          // Handle ping requests (some clients send these)
+          if (mcpRequest.method === "ping") {
+            const response = {
+              jsonrpc: "2.0",
+              id: mcpRequest.id,
+              result: {}
+            };
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(response));
+            return;
+          }
+
+          // Handle resources/list (even if empty)
+          if (mcpRequest.method === "resources/list") {
+            const response = {
+              jsonrpc: "2.0",
+              id: mcpRequest.id,
+              result: {
+                resources: []
+              }
+            };
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(response));
+            return;
+          }
+
+          // Handle prompts/list (even if empty)
+          if (mcpRequest.method === "prompts/list") {
+            const response = {
+              jsonrpc: "2.0",
+              id: mcpRequest.id,
+              result: {
+                prompts: []
+              }
+            };
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(response));
+            return;
+          }
+
           // Unknown method
+          console.log(`Unknown MCP method at root: ${mcpRequest.method}`);
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(
             JSON.stringify({
