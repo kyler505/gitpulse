@@ -93,8 +93,8 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
 
-  // Health check endpoint
-  if (req.method === "GET" && (req.url === "/" || req.url === "/health")) {
+  // Health check endpoint  
+  if (req.method === "GET" && req.url === "/health") {
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify({
       name: "GitPulse MCP Server",
@@ -115,7 +115,41 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
     return;
   }
 
-  // MCP endpoint
+  // MCP SSE endpoint (for some clients that expect streaming)
+  if (req.method === "GET" && req.url === "/mcp") {
+    res.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    });
+    
+    // Send connection established
+    res.write("data: " + JSON.stringify({
+      jsonrpc: "2.0",
+      method: "server/ready",
+      params: {
+        serverInfo: {
+          name: "gitpulse-mcp-server",
+          version: "1.0.0"
+        }
+      }
+    }) + "\n\n");
+    
+    // Keep connection alive
+    const keepAlive = setInterval(() => {
+      res.write("data: ping\n\n");
+    }, 30000);
+    
+    req.on("close", () => {
+      clearInterval(keepAlive);
+    });
+    
+    return;
+  }
+
+  // MCP endpoint (POST)
   if (req.method === "POST" && req.url === "/mcp") {
     let body = "";
     req.on("data", (chunk) => (body += chunk));
@@ -294,11 +328,97 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
     return;
   }
 
+  // Root endpoint that also handles MCP
+  if (req.method === "GET" && req.url === "/") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({
+      name: "GitPulse MCP Server",
+      version: "1.0.0", 
+      description: "GitHub repository monitoring MCP server",
+      protocol_version: "2024-11-05",
+      endpoints: {
+        health: "/health",
+        mcp: "/mcp",
+        root: "/"
+      },
+      capabilities: {
+        tools: {},
+        logging: {},
+        prompts: {},
+        resources: {}
+      },
+      server_info: {
+        name: "gitpulse-mcp-server",
+        version: "1.0.0"
+      }
+    }));
+    return;
+  }
+
+  // MCP endpoint at root (for some clients)
+  if (req.method === "POST" && req.url === "/") {
+    let body = "";
+    req.on("data", (chunk) => (body += chunk));
+    req.on("end", async () => {
+      try {
+        const mcpRequest = JSON.parse(body || "{}");
+        console.log("MCP Request at root:", JSON.stringify(mcpRequest, null, 2));
+
+        // Handle the same MCP requests as /mcp endpoint
+        if (mcpRequest.method === "initialize") {
+          const response = {
+            jsonrpc: "2.0",
+            id: mcpRequest.id,
+            result: {
+              protocolVersion: "2024-11-05",
+              capabilities: {
+                tools: {},
+                logging: {},
+                prompts: {},
+                resources: {}
+              },
+              serverInfo: {
+                name: "gitpulse-mcp-server",
+                version: "1.0.0"
+              }
+            }
+          };
+          
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(response));
+          return;
+        }
+
+        // Redirect to main MCP handler by setting the URL
+        req.url = "/mcp";
+        // Fall through to the main MCP handler below
+      } catch (error) {
+        console.error("MCP Error at root:", error);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({
+          jsonrpc: "2.0",
+          id: null,
+          error: {
+            code: -32603,
+            message: "Internal error",
+            data: { error: error instanceof Error ? error.message : String(error) }
+          }
+        }));
+        return;
+      }
+    });
+    return;
+  }
+
   // 404 for other endpoints
   res.writeHead(404, { "Content-Type": "application/json" });
   res.end(JSON.stringify({
     error: "Not found",
-    available_endpoints: ["/", "/health", "/mcp"]
+    available_endpoints: ["/", "/health", "/mcp"],
+    request: {
+      method: req.method,
+      url: req.url
+    }
   }));
 });
 
