@@ -93,6 +93,7 @@ const server = createServer(
     }
 
     console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+    console.log(`Headers:`, JSON.stringify(req.headers, null, 2));
 
     // Health check endpoint
     if (req.method === "GET" && req.url === "/health") {
@@ -173,10 +174,17 @@ const server = createServer(
               result: {
                 protocolVersion: "2024-11-05",
                 capabilities: {
-                  tools: {},
+                  tools: {
+                    listChanged: true
+                  },
                   logging: {},
-                  prompts: {},
-                  resources: {},
+                  prompts: {
+                    listChanged: true
+                  },
+                  resources: {
+                    subscribe: true,
+                    listChanged: true
+                  }
                 },
                 serverInfo: {
                   name: "gitpulse-mcp-server",
@@ -434,10 +442,17 @@ const server = createServer(
               result: {
                 protocolVersion: "2024-11-05",
                 capabilities: {
-                  tools: {},
+                  tools: {
+                    listChanged: true
+                  },
                   logging: {},
-                  prompts: {},
-                  resources: {},
+                  prompts: {
+                    listChanged: true
+                  },
+                  resources: {
+                    subscribe: true,
+                    listChanged: true
+                  }
                 },
                 serverInfo: {
                   name: "gitpulse-mcp-server",
