@@ -9,8 +9,14 @@ let octokit: Octokit | null = null;
 function getGitHubClient(): Octokit {
   if (!octokit) {
     const token = process.env.GITHUB_TOKEN;
+    console.log(`GitHub token status: ${token ? 'Present' : 'Missing'}`);
+    if (!token) {
+      throw new Error(
+        "GitHub token is required. Set GITHUB_TOKEN environment variable."
+      );
+    }
     octokit = new Octokit({
-      auth: token || undefined, // Use token if available, otherwise use public API
+      auth: token,
       userAgent: "GitPulse-MCP-Server/1.0.0",
     });
   }
