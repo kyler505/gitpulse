@@ -157,6 +157,7 @@ if __name__ == "__main__":
     
     print(f"Starting GitPulse FastMCP server on {host}:{port}")
     print(f"GitHub token configured: {bool(os.environ.get('GITHUB_TOKEN'))}")
+    print("FastMCP server ready for Poke integration!")
     
     mcp.run(
         transport="http",
