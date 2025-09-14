@@ -1,6 +1,6 @@
 # GitPulse MCP Server
 
-**GitPulse** - AI-powered GitHub repository monitoring through MCP. Fetch commits, PRs, and repo activity via simple tool calls. Built with FastMCP for seamless AI assistant integration.
+**GitPulse** - Comprehensive AI-powered GitHub repository monitoring through MCP. Track commits, PRs, issues, releases, workflows, and repository statistics via simple tool calls. Built with FastMCP for seamless AI assistant integration.
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/kyler505/gitpulse)
 
@@ -42,6 +42,42 @@ Click the "Deploy to Render" button above.
 
 Your server will be available at `https://your-service-name.onrender.com/mcp` (NOTE THE `/mcp`!)
 
+## Usage Examples
+
+### Monitor Repository Activity
+```python
+# Get recent commits
+fetchNewCommits("microsoft/vscode", per_page=10)
+
+# Check open pull requests
+fetchNewPRs("facebook/react", state="open", per_page=5)
+
+# Find critical issues
+fetchNewIssues("nodejs/node", state="open", labels="critical,bug")
+
+# Get repository health overview
+getRepoStats("torvalds/linux")
+```
+
+### Track Releases and CI/CD
+```python
+# Monitor latest releases
+fetchReleases("python/cpython", per_page=5)
+
+# Check GitHub Actions status
+fetchWorkflowRuns("vercel/next.js", status="completed", per_page=10)
+```
+
+## Configuration
+
+Set your GitHub token as an environment variable for authenticated access and higher rate limits:
+
+```bash
+export GITHUB_TOKEN=your_github_personal_access_token
+```
+
+Without a token, the server uses GitHub's public API with lower rate limits.
+
 ## Customization
 
 Add more tools by decorating functions with `@mcp.tool`:
@@ -56,7 +92,22 @@ def fetchNewCommits(repository: str, per_page: int = 30) -> list:
 
 ## Tools
 
+### Core Tools
 - `greet`: Welcome message from GitPulse
 - `get_server_info`: Server information and configuration status
 
-More GitHub monitoring tools coming soon!
+### GitHub Monitoring Tools
+- `fetchNewCommits`: Fetch recent commits with filtering by date and pagination
+- `fetchNewPRs`: Fetch pull requests with state filtering (open/closed/all)
+- `fetchNewIssues`: Fetch issues with state and label filtering, excluding PRs
+- `fetchReleases`: Fetch repository releases with download counts and asset info
+- `getRepoStats`: Get comprehensive repository statistics and health metrics
+- `fetchWorkflowRuns`: Monitor GitHub Actions workflow runs with status filtering
+
+### Features
+- 🔐 **Authentication**: Supports both GitHub token authentication and public API access
+- 📊 **Rich Data**: Returns comprehensive information including stats, labels, assignees, and metadata
+- 🔍 **Advanced Filtering**: Filter by state, labels, branches, status, and date ranges
+- 📈 **Health Metrics**: Repository health scoring based on best practices
+- ⚡ **Rate Limit Aware**: Respects GitHub API limits with intelligent pagination
+- 🛡️ **Error Handling**: Robust error handling for all GitHub API interactions
