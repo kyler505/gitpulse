@@ -207,6 +207,262 @@ def fetchNewIssues(repository: str, state: str = "open", per_page: int = 30, lab
     except Exception as e:
         raise Exception(f"Error fetching issues: {str(e)}")
 
+@mcp.tool(description="Fetch detailed information about a specific GitHub issue")
+def fetchIssueDetails(repository: str, issue_number: int) -> Dict[str, Any]:
+    """
+    Fetch detailed information about a specific GitHub issue.
+
+    Args:
+        repository: Repository in format 'owner/repo' (e.g., 'microsoft/vscode')
+        issue_number: The issue number to fetch details for
+
+    Returns:
+        Dictionary with detailed issue information including body, comments count, reactions, and timeline
+    """
+    try:
+        github = get_github_client()
+        owner, repo_name = parse_repository(repository)
+
+        # Get repository
+        repo = github.get_repo(f"{owner}/{repo_name}")
+
+        # Get the specific issue
+        issue = repo.get_issue(issue_number)
+
+        # Skip if this is actually a pull request
+        if issue.pull_request:
+            raise ValueError(f"Issue #{issue_number} is actually a pull request. Use PR-specific tools instead.")
+
+        # Build detailed issue information
+        result = {
+            "number": issue.number,
+            "title": issue.title,
+            "body": issue.body if issue.body else "",
+            "author": issue.user.login if issue.user else "Unknown",
+            "state": issue.state,
+            "created_at": issue.created_at.isoformat() if issue.created_at else "",
+            "updated_at": issue.updated_at.isoformat() if issue.updated_at else "",
+            "closed_at": issue.closed_at.isoformat() if issue.closed_at else None,
+            "labels": [{"name": label.name, "color": label.color, "description": label.description} for label in issue.labels] if issue.labels else [],
+            "assignees": [{"login": assignee.login, "html_url": assignee.html_url} for assignee in issue.assignees] if issue.assignees else [],
+            "milestone": {
+                "title": issue.milestone.title,
+                "description": issue.milestone.description,
+                "state": issue.milestone.state,
+                "due_on": issue.milestone.due_on.isoformat() if issue.milestone.due_on else None
+            } if issue.milestone else None,
+            "comments_count": issue.comments,
+            "reactions": {
+                "total_count": issue.reactions["total_count"],
+                "+1": issue.reactions["+1"],
+                "-1": issue.reactions["-1"],
+                "laugh": issue.reactions["laugh"],
+                "hooray": issue.reactions["hooray"],
+                "confused": issue.reactions["confused"],
+                "heart": issue.reactions["heart"],
+                "rocket": issue.reactions["rocket"],
+                "eyes": issue.reactions["eyes"]
+            } if hasattr(issue, 'reactions') else {},
+            "locked": issue.locked,
+            "active_lock_reason": issue.active_lock_reason,
+            "html_url": issue.html_url,
+            "repository": {
+                "name": repo.name,
+                "full_name": repo.full_name,
+                "html_url": repo.html_url
+            }
+        }
+
+        return result
+
+    except Exception as e:
+        raise Exception(f"Error fetching issue details: {str(e)}")
+
+@mcp.tool(description="Fetch comments from a specific GitHub issue")
+def fetchIssueComments(repository: str, issue_number: int, per_page: int = 30) -> List[Dict[str, Any]]:
+    """
+    Fetch comments from a specific GitHub issue.
+
+    Args:
+        repository: Repository in format 'owner/repo' (e.g., 'microsoft/vscode')
+        issue_number: The issue number to fetch comments for
+        per_page: Number of comments to fetch (max 100, default 30)
+
+    Returns:
+        List of comment objects with id, body, author, created_at, updated_at, and reactions
+    """
+    try:
+        github = get_github_client()
+        owner, repo_name = parse_repository(repository)
+
+        # Get repository
+        repo = github.get_repo(f"{owner}/{repo_name}")
+
+        # Get the specific issue
+        issue = repo.get_issue(issue_number)
+
+        # Skip if this is actually a pull request
+        if issue.pull_request:
+            raise ValueError(f"Issue #{issue_number} is actually a pull request. Use PR-specific tools instead.")
+
+        # Prepare parameters
+        per_page = min(per_page, 100)  # GitHub API limit
+
+        # Get comments
+        comments = issue.get_comments()
+
+        # Convert to list with pagination
+        results = []
+        count = 0
+        for comment in comments:
+            if count >= per_page:
+                break
+
+            result_comment = {
+                "id": comment.id,
+                "body": comment.body if comment.body else "",
+                "author": comment.user.login if comment.user else "Unknown",
+                "author_association": comment.author_association if hasattr(comment, 'author_association') else "NONE",
+                "created_at": comment.created_at.isoformat() if comment.created_at else "",
+                "updated_at": comment.updated_at.isoformat() if comment.updated_at else "",
+                "html_url": comment.html_url,
+                "reactions": {
+                    "total_count": comment.reactions["total_count"],
+                    "+1": comment.reactions["+1"],
+                    "-1": comment.reactions["-1"],
+                    "laugh": comment.reactions["laugh"],
+                    "hooray": comment.reactions["hooray"],
+                    "confused": comment.reactions["confused"],
+                    "heart": comment.reactions["heart"],
+                    "rocket": comment.reactions["rocket"],
+                    "eyes": comment.reactions["eyes"]
+                } if hasattr(comment, 'reactions') else {}
+            }
+
+            results.append(result_comment)
+            count += 1
+
+        return results
+
+    except Exception as e:
+        raise Exception(f"Error fetching issue comments: {str(e)}")
+
+@mcp.tool(description="Add a comment to a GitHub issue")
+def addIssueComment(repository: str, issue_number: int, comment_body: str) -> Dict[str, Any]:
+    """
+    Add a comment to a specific GitHub issue.
+
+    Args:
+        repository: Repository in format 'owner/repo' (e.g., 'microsoft/vscode')
+        issue_number: The issue number to add a comment to
+        comment_body: The content of the comment to add
+
+    Returns:
+        Dictionary with the created comment information including id, body, author, and creation time
+    """
+    try:
+        github = get_github_client()
+
+        # Check if we have authentication
+        if not os.environ.get("GITHUB_TOKEN"):
+            raise Exception("GitHub token is required to add comments. Please set the GITHUB_TOKEN environment variable.")
+
+        owner, repo_name = parse_repository(repository)
+
+        # Get repository
+        repo = github.get_repo(f"{owner}/{repo_name}")
+
+        # Get the specific issue
+        issue = repo.get_issue(issue_number)
+
+        # Skip if this is actually a pull request
+        if issue.pull_request:
+            raise ValueError(f"Issue #{issue_number} is actually a pull request. Use PR-specific tools instead.")
+
+        # Check if the issue is locked
+        if issue.locked:
+            raise Exception(f"Issue #{issue_number} is locked and cannot accept new comments.")
+
+        # Validate comment body
+        if not comment_body or not comment_body.strip():
+            raise ValueError("Comment body cannot be empty.")
+
+        # Add the comment
+        comment = issue.create_comment(comment_body.strip())
+
+        # Return the created comment information
+        result = {
+            "id": comment.id,
+            "body": comment.body,
+            "author": comment.user.login if comment.user else "Unknown",
+            "author_association": comment.author_association if hasattr(comment, 'author_association') else "NONE",
+            "created_at": comment.created_at.isoformat() if comment.created_at else "",
+            "updated_at": comment.updated_at.isoformat() if comment.updated_at else "",
+            "html_url": comment.html_url,
+            "issue_number": issue_number,
+            "repository": f"{owner}/{repo_name}",
+            "success": True
+        }
+
+        return result
+
+    except Exception as e:
+        raise Exception(f"Error adding comment to issue: {str(e)}")
+
+@mcp.tool(description="Update an existing comment on a GitHub issue")
+def updateIssueComment(repository: str, comment_id: int, comment_body: str) -> Dict[str, Any]:
+    """
+    Update an existing comment on a GitHub issue.
+
+    Args:
+        repository: Repository in format 'owner/repo' (e.g., 'microsoft/vscode')
+        comment_id: The ID of the comment to update
+        comment_body: The new content for the comment
+
+    Returns:
+        Dictionary with the updated comment information
+    """
+    try:
+        github = get_github_client()
+
+        # Check if we have authentication
+        if not os.environ.get("GITHUB_TOKEN"):
+            raise Exception("GitHub token is required to update comments. Please set the GITHUB_TOKEN environment variable.")
+
+        owner, repo_name = parse_repository(repository)
+
+        # Get repository
+        repo = github.get_repo(f"{owner}/{repo_name}")
+
+        # Get the specific comment
+        comment = repo.get_issue_comment(comment_id)
+
+        # Validate comment body
+        if not comment_body or not comment_body.strip():
+            raise ValueError("Comment body cannot be empty.")
+
+        # Update the comment
+        comment.edit(comment_body.strip())
+
+        # Return the updated comment information
+        result = {
+            "id": comment.id,
+            "body": comment.body,
+            "author": comment.user.login if comment.user else "Unknown",
+            "author_association": comment.author_association if hasattr(comment, 'author_association') else "NONE",
+            "created_at": comment.created_at.isoformat() if comment.created_at else "",
+            "updated_at": comment.updated_at.isoformat() if comment.updated_at else "",
+            "html_url": comment.html_url,
+            "repository": f"{owner}/{repo_name}",
+            "success": True,
+            "action": "updated"
+        }
+
+        return result
+
+    except Exception as e:
+        raise Exception(f"Error updating comment: {str(e)}")
+
 @mcp.tool(description="Fetch releases from a GitHub repository")
 def fetchReleases(repository: str, per_page: int = 30) -> List[Dict[str, Any]]:
     """
