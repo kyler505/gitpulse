@@ -2,6 +2,10 @@
 
 **GitPulse** - Comprehensive AI-powered GitHub repository monitoring through MCP. Track commits, PRs, issues, releases, workflows, and repository statistics via simple tool calls. Built with FastMCP for seamless AI assistant integration.
 
+## Status
+
+⚠️ **Under Maintenance** - This project is currently being updated and may not function properly. Please check back later for updates.
+
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/kyler505/gitpulse)
 
 ## Local Development
